@@ -15,12 +15,31 @@ const ProductsRenderer = {
         document.addEventListener('productsUpdated', (e) => {
             this.currentProducts = e.detail;
             this.filteredProducts = [...this.currentProducts];
-            this.render();
+            this.renderAll();
         });
 
-        this.setupFilters();
-        this.applyUrlParams();
-        this.render();
+        this.renderAll();
+
+        if (document.getElementById('productGrid')) {
+            this.setupFilters();
+            this.applyUrlParams();
+            this.render();
+        }
+    },
+
+    renderAll() {
+        const hasFeatured = document.getElementById('featuredProducts');
+        const hasBest = document.getElementById('bestSellers');
+        const hasNew = document.getElementById('newArrivals');
+        const hasPremium = document.getElementById('premiumCollection');
+        if (!hasFeatured && !hasBest && !hasNew && !hasPremium) return;
+
+        if (!this.currentProducts.length) return;
+
+        if (hasFeatured) this.renderFeatured();
+        if (hasBest) this.renderBestSellers();
+        if (hasNew) this.renderNewArrivals();
+        if (hasPremium) this.renderPremium();
     },
 
     applyUrlParams() {
