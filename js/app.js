@@ -19,7 +19,11 @@ const App = {
         this.initTouchFeedback();
         this.initSafeArea();
 
-        if (document.getElementById('productGrid')) {
+        if (document.getElementById('productGrid') ||
+            document.getElementById('featuredProducts') ||
+            document.getElementById('bestSellers') ||
+            document.getElementById('newArrivals') ||
+            document.getElementById('premiumCollection')) {
             typeof ProductsRenderer !== 'undefined' && ProductsRenderer.init();
         }
 
