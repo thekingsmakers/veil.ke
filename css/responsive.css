@@ -438,6 +438,35 @@
         padding: 20px;
     }
 
+    .ai-chat-widget {
+        bottom: 16px;
+        left: 16px;
+    }
+
+    .ai-chat-toggle {
+        width: 48px;
+        height: 48px;
+    }
+
+    .ai-chat-panel {
+        width: calc(100vw - 32px);
+        height: 60vh;
+        max-height: 500px;
+        bottom: 60px;
+    }
+
+    .ai-chat-header {
+        padding: 12px 16px;
+    }
+
+    .ai-chat-body {
+        padding: 12px;
+    }
+
+    .ai-chat-footer {
+        padding: 8px 12px;
+    }
+
     .quick-view-details h2 {
         font-size: 1.05rem;
     }
@@ -509,7 +538,8 @@
     .newsletter-section,
     .footer,
     .mobile-backdrop,
-    .toast-container {
+    .toast-container,
+    .ai-chat-widget {
         display: none;
     }
 }
