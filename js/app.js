@@ -399,54 +399,31 @@ const Toast = {
     }
 };
 
-const WishlistManager = {
-    storageKey: 'veilke_wishlist',
-
-    getAll() {
-        try {
-            const data = localStorage.getItem(this.storageKey);
-            return data ? JSON.parse(data) : [];
-        } catch { return []; }
-    },
-
-    has(productName) {
-        return this.getAll().includes(productName);
-    },
-
-    toggle(productName) {
-        let items = this.getAll();
-        const index = items.indexOf(productName);
-
-        if (index === -1) {
-            items.push(productName);
-            localStorage.setItem(this.storageKey, JSON.stringify(items));
-            Toast.show('Added to wishlist!', 'heart');
-            return true;
-        } else {
-            items.splice(index, 1);
-            localStorage.setItem(this.storageKey, JSON.stringify(items));
-            Toast.show('Removed from wishlist', 'info');
-            return false;
-        }
-    },
-
-    updateButton(btn, productName) {
-        const isWishlisted = this.has(productName);
-        btn.classList.toggle('active', isWishlisted);
-        const icon = btn.querySelector('svg');
-        if (icon) {
-            icon.setAttribute('fill', isWishlisted ? 'currentColor' : 'none');
-        }
-    }
-};
-
 const CartManager = {
     storageKey: 'veilke_cart',
 
     getAll() {
         try {
             const data = localStorage.getItem(this.storageKey);
-            return data ? JSON.parse(data) : [];
+            if (!data) return [];
+            let items = JSON.parse(data);
+            let changed = false;
+            const urlPrefix = `https://raw.githubusercontent.com/${CONFIG.githubUser}/${CONFIG.repository}/${CONFIG.branch}/`;
+            items = items.map(i => {
+                if (!i.key) {
+                    changed = true;
+                    let key = i.name || `item_${Date.now()}`;
+                    if (i.url && i.url.startsWith(urlPrefix)) {
+                        key = i.url.slice(urlPrefix.length);
+                    }
+                    return { ...i, key };
+                }
+                return i;
+            });
+            if (changed) {
+                localStorage.setItem(this.storageKey, JSON.stringify(items));
+            }
+            return items;
         } catch { return []; }
     },
 
@@ -544,6 +521,19 @@ const CartManager = {
         document.getElementById('cartOverlay').classList.add('active');
         document.getElementById('cartPanel').classList.add('active');
         document.body.style.overflow = 'hidden';
+
+        if (typeof SwipeGesture !== 'undefined') {
+            const panel = document.getElementById('cartPanel');
+            if (panel && !panel._swipeAttached) {
+                panel._swipeAttached = true;
+                SwipeGesture.on(panel, {
+                    onSwipeRight: () => {
+                        if (panel.classList.contains('active')) this.closePanel();
+                    },
+                    threshold: 60
+                });
+            }
+        }
     },
 
     closePanel() {
@@ -601,6 +591,13 @@ const CartManager = {
 
         const msg = encodeURIComponent(
             `Hi Veil.ke! I'd like to order:\n\n${lines.join('\n\n')}\n\nPlease assist with pricing and availability. 🤍`
+        );
+        window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${msg}`, '_blank', 'noopener,noreferrer');
+    },
+
+    sendSingleToWhatsApp(product) {
+        const msg = encodeURIComponent(
+            `Hi Veil.ke! I'm interested in:\n${product.title} (${product.categoryFormatted || 'Collection'})\nView: ${product.url}\n\nPlease assist with pricing and availability. 🤍`
         );
         window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${msg}`, '_blank', 'noopener,noreferrer');
     }

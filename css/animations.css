@@ -236,7 +236,7 @@
     100% { transform: scale(1); }
 }
 
-.wishlist-btn:active svg {
+.order-btn:active svg {
     animation: heartBounce 0.4s ease;
 }
 
