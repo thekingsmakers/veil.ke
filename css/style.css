@@ -1693,6 +1693,22 @@ ul { list-style: none; }
     30% { transform: translateY(-6px); }
 }
 
+/* Typewriter streaming text */
+.ai-chat-typing-content {
+    line-height: 1.6;
+}
+
+.ai-chat-typing-content::after {
+    content: '|';
+    animation: cursorBlink 0.7s step-end infinite;
+    color: var(--secondary);
+    font-weight: 300;
+}
+
+@keyframes cursorBlink {
+    50% { opacity: 0; }
+}
+
 /* Chat scroll */
 .ai-chat-body::-webkit-scrollbar {
     width: 4px;

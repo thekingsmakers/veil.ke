@@ -249,6 +249,76 @@ const AiChat = {
         }
     },
 
+    async typeMessage(fullText) {
+        const body = document.getElementById('aiChatBody');
+        if (!body) return;
+
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const div = document.createElement('div');
+        div.className = 'ai-chat-message ai-chat-bot';
+
+        div.innerHTML = `
+            <div class="ai-chat-avatar">
+                <svg width="16" height="16" viewBox="0 0 100 100" fill="none">
+                    <path d="M50 10 C25 10 10 30 10 50 C10 70 25 90 50 90 C75 90 90 70 90 50 C90 30 75 10 50 10Z" stroke="#8C6A4A" stroke-width="2" fill="none"/>
+                    <path d="M35 45 Q50 30 65 45 Q70 55 50 65 Q30 55 35 45Z" fill="#8C6A4A"/>
+                </svg>
+            </div>
+            <div class="ai-chat-bubble" id="aiChatTypingBubble">
+                <div class="ai-chat-typing-content"></div>
+                <div class="ai-chat-time">${time}</div>
+                <button class="chat-copy-btn" aria-label="Copy message" style="display:none">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+
+        const suggestions = body.querySelector('.chat-suggestions');
+        if (suggestions) {
+            body.insertBefore(div, suggestions);
+        } else {
+            body.appendChild(div);
+        }
+
+        const contentEl = div.querySelector('.ai-chat-typing-content');
+        const copyBtn = div.querySelector('.chat-copy-btn');
+        const fullHtml = this.formatResponse(fullText);
+        const plainForCopy = fullText;
+
+        const temp = document.createElement('div');
+        temp.innerHTML = fullHtml;
+        const textContent = temp.textContent || temp.innerText;
+
+        let index = 0;
+        const chars = textContent.split('');
+
+        const typeNext = () => {
+            if (index < chars.length) {
+                contentEl.textContent += chars[index];
+                index++;
+                body.scrollTop = body.scrollHeight;
+                const delay = chars[index - 1]?.match(/[.!?]/) ? 40 : 15;
+                setTimeout(typeNext, delay);
+            } else {
+                contentEl.innerHTML = fullHtml;
+                copyBtn.style.display = 'inline-flex';
+                copyBtn.addEventListener('click', () => {
+                    navigator.clipboard.writeText(plainForCopy).then(() => {
+                        copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+                        setTimeout(() => {
+                            copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+                        }, 2000);
+                    }).catch(() => {});
+                });
+                body.scrollTop = body.scrollHeight;
+            }
+        };
+
+        typeNext();
+    },
+
     showTyping() {
         const body = document.getElementById('aiChatBody');
         if (!body) return;
@@ -298,7 +368,14 @@ const AiChat = {
         if (suggestionsArea) suggestionsArea.style.display = 'none';
 
         try {
-            const systemPrompt = `You are Veil.ke's AI styling assistant — a warm, knowledgeable, and enthusiastic fashion consultant for a premium abaya brand based in Kenya serving East Africa.
+            const systemPrompt = `You are Veil.ke's AI styling assistant — a warm, knowledgeable, and enthusiastic fashion consultant for a premium abaya brand. You ONLY answer questions about Veil.ke, its products, modest fashion, and related topics. If asked about anything unrelated (e.g., general knowledge, news, math, coding, other brands), politely say you're specialized in Veil.ke and modest fashion and redirect to those topics.
+
+ABSOLUTE RULES:
+- ONLY discuss Veil.ke, abayas, modest fashion, hijab styling, and related topics
+- DO NOT answer general knowledge questions, news, politics, health advice, tech support, etc.
+- DO NOT roleplay, write code, or engage in non-fashion conversations
+- If the user persists on off-topic topics, politely repeat that you're here to help with Veil.ke and modest fashion
+- NEVER make up specific prices — always direct to WhatsApp for current pricing
 
 BRAND IDENTITY:
 - Veil.ke: Premium abayas for the modern Muslim woman
@@ -405,18 +482,18 @@ PERSONALITY GUIDELINES:
 
             if (!response.ok) {
                 const errText = await response.text().catch(() => '');
-                this.renderMessage('assistant', "I'm sorry, I'm having trouble connecting right now. Please try again in a moment, or reach out to us directly on **WhatsApp at +254 119 973 430** for immediate assistance. 🤍");
+                await this.typeMessage("I'm sorry, I'm having trouble connecting right now. Please try again in a moment, or reach out to us directly on **WhatsApp at +254 119 973 430** for immediate assistance. 🤍");
                 return;
             }
 
             const data = await response.json();
             const reply = data?.choices?.[0]?.message?.content || "I'm not sure how to answer that. Could you rephrase, or would you like to speak with our team on **WhatsApp (+254 119 973 430)**?";
             this.addMessage('assistant', reply);
-            this.renderMessage('assistant', reply);
+            await this.typeMessage(reply);
 
         } catch {
             this.removeTyping();
-            this.renderMessage('assistant', "Something went wrong. Please try again, or message us on **WhatsApp at +254 119 973 430** and we'll help you right away! 🤍");
+            await this.typeMessage("Something went wrong. Please try again, or message us on **WhatsApp at +254 119 973 430** and we'll help you right away! 🤍");
         }
     },
 
