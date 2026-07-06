@@ -4,10 +4,6 @@
         grid-template-columns: repeat(3, 1fr);
     }
 
-    .gallery-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-
     .footer-grid {
         grid-template-columns: 2fr 1fr 1fr;
         gap: 32px;
@@ -157,15 +153,6 @@
         font-size: 1.8rem;
     }
 
-    .gallery-grid {
-        grid-template-columns: repeat(2, 1fr);
-        grid-auto-rows: 140px;
-    }
-
-    .gallery-item:nth-child(1) { grid-row: span 1; grid-column: span 2; }
-    .gallery-item:nth-child(2) { grid-row: span 1; grid-column: span 1; }
-    .gallery-item:nth-child(3) { grid-row: span 1; grid-column: span 1; }
-
     .footer-grid {
         grid-template-columns: 1fr 1fr;
         gap: 24px;
@@ -248,28 +235,6 @@
         font-size: 1rem;
     }
 
-    .gallery-viewer-content {
-        padding: 60px 16px 16px;
-    }
-
-    .gallery-thumbnails {
-        padding: 8px 16px 16px;
-        justify-content: flex-start;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .gallery-viewer-prev,
-    .gallery-viewer-next {
-        width: 44px;
-        height: 44px;
-        top: auto;
-        bottom: 100px;
-        transform: none;
-    }
-
-    .gallery-viewer-prev { left: 16px; }
-    .gallery-viewer-next { right: 16px; }
-
     .product-card-overlay {
         display: none;
     }
@@ -345,12 +310,6 @@
     .footer-grid {
         grid-template-columns: 1fr;
         gap: 32px;
-    }
-
-    .gallery-grid {
-        grid-template-columns: repeat(2, 1fr);
-        grid-auto-rows: 120px;
-        gap: 4px;
     }
 
     .hero-title {
@@ -467,6 +426,15 @@
         padding: 8px 12px;
     }
 
+    .chat-suggestions {
+        gap: 4px;
+    }
+
+    .chat-suggestion {
+        font-size: 0.7rem;
+        padding: 5px 10px;
+    }
+
     .quick-view-details h2 {
         font-size: 1.05rem;
     }
@@ -487,22 +455,6 @@
         padding: 10px 18px;
         font-size: 0.8rem;
         max-width: calc(100vw - 32px);
-    }
-
-    .gallery-thumb {
-        width: 48px;
-        height: 48px;
-    }
-
-    .gallery-viewer-info {
-        font-size: 0.78rem;
-    }
-
-    .gallery-viewer-close {
-        width: 40px;
-        height: 40px;
-        top: 12px;
-        right: 12px;
     }
 
     .loader-text {

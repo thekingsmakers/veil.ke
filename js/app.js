@@ -27,10 +27,6 @@ const App = {
             typeof ProductsRenderer !== 'undefined' && ProductsRenderer.init();
         }
 
-        if (document.getElementById('galleryGrid')) {
-            typeof Gallery !== 'undefined' && Gallery.init();
-        }
-
         typeof SearchEngine !== 'undefined' && SearchEngine.init();
 
         setTimeout(() => this.hideLoadingScreen(), 800);
