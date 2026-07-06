@@ -451,12 +451,14 @@ const CartManager = {
     },
 
     add(product) {
+        const key = product.path || product.name;
         let items = this.getAll();
-        const existing = items.find(i => i.name === product.name);
+        const existing = items.find(i => i.key === key);
         if (existing) {
             existing.quantity = (existing.quantity || 1) + 1;
         } else {
             items.push({
+                key: key,
                 name: product.name,
                 title: product.title,
                 category: product.category,
@@ -470,8 +472,8 @@ const CartManager = {
         Toast.show('Added to cart! 🛍️', 'success');
     },
 
-    remove(productName) {
-        let items = this.getAll().filter(i => i.name !== productName);
+    remove(key) {
+        let items = this.getAll().filter(i => i.key !== key);
         localStorage.setItem(this.storageKey, JSON.stringify(items));
         this.updateBadge();
         this.renderPanel();
@@ -488,8 +490,8 @@ const CartManager = {
         return this.getAll().reduce((sum, i) => sum + (i.quantity || 1), 0);
     },
 
-    isInCart(productName) {
-        return this.getAll().some(i => i.name === productName);
+    isInCart(key) {
+        return this.getAll().some(i => i.key === key);
     },
 
     updateBadge() {
@@ -576,7 +578,7 @@ const CartManager = {
                     <div class="cart-item-category">${item.categoryFormatted || 'Collection'}</div>
                     <div class="cart-item-qty">Qty: ${item.quantity || 1}</div>
                 </div>
-                <button class="cart-item-remove" data-name="${item.name}" aria-label="Remove ${item.title}">
+                <button class="cart-item-remove" data-key="${item.key}" aria-label="Remove ${item.title}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
@@ -585,7 +587,7 @@ const CartManager = {
         `).join('');
 
         body.querySelectorAll('.cart-item-remove').forEach(btn => {
-            btn.addEventListener('click', () => this.remove(btn.dataset.name));
+            btn.addEventListener('click', () => this.remove(btn.dataset.key));
         });
     },
 
