@@ -3,7 +3,7 @@ const CONFIG = {
     repository: "veil.ke",
     branch: "main",
     productFolder: "products",
-    cacheDuration: 300000,
+    cacheDuration: 120000,
     itemsPerPage: 12,
     whatsappNumber: "254119973430",
     whatsappMessage: "Hello! I'd like to order an abaya from Veil.ke",

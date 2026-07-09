@@ -399,64 +399,43 @@ const Toast = {
     }
 };
 
-const WishlistManager = {
-    storageKey: 'veilke_wishlist',
-
-    getAll() {
-        try {
-            const data = localStorage.getItem(this.storageKey);
-            return data ? JSON.parse(data) : [];
-        } catch { return []; }
-    },
-
-    has(productName) {
-        return this.getAll().includes(productName);
-    },
-
-    toggle(productName) {
-        let items = this.getAll();
-        const index = items.indexOf(productName);
-
-        if (index === -1) {
-            items.push(productName);
-            localStorage.setItem(this.storageKey, JSON.stringify(items));
-            Toast.show('Added to wishlist!', 'heart');
-            return true;
-        } else {
-            items.splice(index, 1);
-            localStorage.setItem(this.storageKey, JSON.stringify(items));
-            Toast.show('Removed from wishlist', 'info');
-            return false;
-        }
-    },
-
-    updateButton(btn, productName) {
-        const isWishlisted = this.has(productName);
-        btn.classList.toggle('active', isWishlisted);
-        const icon = btn.querySelector('svg');
-        if (icon) {
-            icon.setAttribute('fill', isWishlisted ? 'currentColor' : 'none');
-        }
-    }
-};
-
 const CartManager = {
     storageKey: 'veilke_cart',
 
     getAll() {
         try {
             const data = localStorage.getItem(this.storageKey);
-            return data ? JSON.parse(data) : [];
+            if (!data) return [];
+            let items = JSON.parse(data);
+            let changed = false;
+            const urlPrefix = `https://raw.githubusercontent.com/${CONFIG.githubUser}/${CONFIG.repository}/${CONFIG.branch}/`;
+            items = items.map(i => {
+                if (!i.key) {
+                    changed = true;
+                    let key = i.name || `item_${Date.now()}`;
+                    if (i.url && i.url.startsWith(urlPrefix)) {
+                        key = i.url.slice(urlPrefix.length);
+                    }
+                    return { ...i, key };
+                }
+                return i;
+            });
+            if (changed) {
+                localStorage.setItem(this.storageKey, JSON.stringify(items));
+            }
+            return items;
         } catch { return []; }
     },
 
     add(product) {
+        const key = product.path || product.name;
         let items = this.getAll();
-        const existing = items.find(i => i.name === product.name);
+        const existing = items.find(i => i.key === key);
         if (existing) {
             existing.quantity = (existing.quantity || 1) + 1;
         } else {
             items.push({
+                key: key,
                 name: product.name,
                 title: product.title,
                 category: product.category,
@@ -470,8 +449,8 @@ const CartManager = {
         Toast.show('Added to cart! 🛍️', 'success');
     },
 
-    remove(productName) {
-        let items = this.getAll().filter(i => i.name !== productName);
+    remove(key) {
+        let items = this.getAll().filter(i => i.key !== key);
         localStorage.setItem(this.storageKey, JSON.stringify(items));
         this.updateBadge();
         this.renderPanel();
@@ -488,8 +467,8 @@ const CartManager = {
         return this.getAll().reduce((sum, i) => sum + (i.quantity || 1), 0);
     },
 
-    isInCart(productName) {
-        return this.getAll().some(i => i.name === productName);
+    isInCart(key) {
+        return this.getAll().some(i => i.key === key);
     },
 
     updateBadge() {
@@ -542,6 +521,19 @@ const CartManager = {
         document.getElementById('cartOverlay').classList.add('active');
         document.getElementById('cartPanel').classList.add('active');
         document.body.style.overflow = 'hidden';
+
+        if (typeof SwipeGesture !== 'undefined') {
+            const panel = document.getElementById('cartPanel');
+            if (panel && !panel._swipeAttached) {
+                panel._swipeAttached = true;
+                SwipeGesture.on(panel, {
+                    onSwipeRight: () => {
+                        if (panel.classList.contains('active')) this.closePanel();
+                    },
+                    threshold: 60
+                });
+            }
+        }
     },
 
     closePanel() {
@@ -576,7 +568,7 @@ const CartManager = {
                     <div class="cart-item-category">${item.categoryFormatted || 'Collection'}</div>
                     <div class="cart-item-qty">Qty: ${item.quantity || 1}</div>
                 </div>
-                <button class="cart-item-remove" data-name="${item.name}" aria-label="Remove ${item.title}">
+                <button class="cart-item-remove" data-key="${item.key}" aria-label="Remove ${item.title}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
@@ -585,7 +577,7 @@ const CartManager = {
         `).join('');
 
         body.querySelectorAll('.cart-item-remove').forEach(btn => {
-            btn.addEventListener('click', () => this.remove(btn.dataset.name));
+            btn.addEventListener('click', () => this.remove(btn.dataset.key));
         });
     },
 
@@ -599,6 +591,13 @@ const CartManager = {
 
         const msg = encodeURIComponent(
             `Hi Veil.ke! I'd like to order:\n\n${lines.join('\n\n')}\n\nPlease assist with pricing and availability. 🤍`
+        );
+        window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${msg}`, '_blank', 'noopener,noreferrer');
+    },
+
+    sendSingleToWhatsApp(product) {
+        const msg = encodeURIComponent(
+            `Hi Veil.ke! I'm interested in:\n${product.title} (${product.categoryFormatted || 'Collection'})\nView: ${product.url}\n\nPlease assist with pricing and availability. 🤍`
         );
         window.open(`https://wa.me/${CONFIG.whatsappNumber}?text=${msg}`, '_blank', 'noopener,noreferrer');
     }

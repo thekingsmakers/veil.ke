@@ -77,24 +77,90 @@ const GitHubAPI = {
     },
 
     async loadProducts() {
-        const cached = this.getCachedProducts();
-        if (cached && this.isCacheValid()) {
-            return cached;
+        const forceRefresh = window.location.search.includes('refresh=1');
+        if (!forceRefresh) {
+            const cached = this.getCachedProducts();
+            if (cached && this.isCacheValid()) {
+                console.log('[GitHubAPI] Using cached products');
+                return cached;
+            }
         }
 
+        console.log('[GitHubAPI] Fetching products...');
         const products = await this.loadProductsFresh();
         if (products && products.length) {
+            console.log('[GitHubAPI] Loaded', products.length, 'products');
             this.setCachedProducts(products);
             return products;
         }
 
-        return cached || [];
+        console.warn('[GitHubAPI] No products loaded, returning cache');
+        return this.getCachedProducts() || [];
     },
 
     async loadProductsFresh() {
+        const treeProducts = await this.loadFromTreeAPI();
+        if (treeProducts && treeProducts.length) {
+            return treeProducts;
+        }
+        return this.loadFromProductsJSON();
+    },
+
+    async loadFromTreeAPI() {
         try {
+            const url = `https://api.github.com/repos/${CONFIG.githubUser}/${CONFIG.repository}/git/trees/${CONFIG.branch}?recursive=1`;
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
+            const response = await fetch(url, {
+                signal: controller.signal,
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            });
+            clearTimeout(timeout);
+            if (!response.ok) {
+                console.warn('[GitHubAPI] Tree API returned', response.status, '- falling back to products.json');
+                return null;
+            }
+
+            const data = await response.json();
+            if (!data.tree) return null;
+
+            const products = [];
+            const imageExts = new Set(IMAGE_EXTENSIONS);
+
+            data.tree.forEach(item => {
+                if (item.type !== 'blob') return;
+                if (!item.path.startsWith(CONFIG.productFolder + '/')) return;
+
+                const parts = item.path.split('/');
+                if (parts.length < 3) return;
+
+                const category = parts[1];
+                const filename = parts.slice(2).join('/');
+
+                const ext = filename.split('.').pop()?.toLowerCase();
+                if (!ext || !imageExts.has(ext)) return;
+
+                products.push(this.buildProduct({ filename }, category));
+            });
+
+            if (!products.length) return null;
+
+            products.sort((a, b) => a.name.localeCompare(b.name));
+            return products;
+        } catch (err) {
+            console.warn('[GitHubAPI] Tree API failed:', err.message, '- falling back to products.json');
+            return null;
+        }
+    },
+
+    async loadFromProductsJSON() {
+        try {
+            console.log('[GitHubAPI] Fetching products.json...');
             const response = await fetch(this.getMetadataUrl());
-            if (!response.ok) return [];
+            if (!response.ok) {
+                console.warn('[GitHubAPI] products.json returned', response.status);
+                return [];
+            }
 
             const metadata = await response.json();
             if (!Array.isArray(metadata)) return [];
@@ -105,7 +171,8 @@ const GitHubAPI = {
 
             products.sort((a, b) => a.name.localeCompare(b.name));
             return products;
-        } catch {
+        } catch (err) {
+            console.warn('[GitHubAPI] products.json fetch failed:', err.message);
             return [];
         }
     },
